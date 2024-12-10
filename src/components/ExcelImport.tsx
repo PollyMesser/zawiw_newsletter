@@ -69,7 +69,7 @@ export default function ExcelImport({ onImport }: Props) {
       <input
         ref={fileRef}
         type="file"
-        accept=".xlsx,.xls"
+        accept=".xlsx,.xls,.xlsm"
         onChange={handleFileUpload}
         className="hidden"
       />
