@@ -47,6 +47,9 @@ const generateStyles = () => `
     font-size: 1em;
     margin-bottom: 1em;
   }
+  a {
+    color: blue;
+    }
   .event-links {
     margin-top: 15px;
   }
@@ -85,17 +88,22 @@ const generateStyles = () => `
 const generateEventHtml = (event: Event) => `
   <div class="event-wrapper">
     <div class="event-card">
-      <p>[${event.category}] ${formatDateWithWeekday(event.date)} um ${formatTime(
-  event.time
-)} Uhr ${formatText(event.location)}</p>
-      <div class="event-title"><strong>${formatText(event.title)}</strong>${
-  event.referent ? ` mit ${formatText(event.referent)}` : ''
-}</div>
+      <p>[${event.category}] ${formatDateWithWeekday(event.date)} um ${formatTime(event.time)} Uhr ${formatText(event.location)}</p>
+      <div class="event-title"><strong>
+        ${formatText(event.title)}</strong>${event.referent ? ` mit ${formatText(event.referent)}` : ''}
+      </div>
       <p>${formatText(event.description)}</p>
-      ${
-        event.zoom
-          ? `<div>Zugangsdaten: <a href="${event.zoom}" target="_blank">Zoom-Link</a></div>
-          <div>[Meeting-ID: ${event.meetingid} | Kenncode: ${event.kenncode} | Schnelleinwahl mobil: ${event.schnelleinwahl}]</div>`
+      ${event.zoom? 
+        `<div>Zugangsdaten: <a href="${event.zoom}" title="${event.zoom}" target="_blank">Zoom-Link</a></div>
+        <div>[Meeting-ID: ${event.meetingid} | Kenncode: ${event.kenncode} | Schnelleinwahl mobil: ${event.schnelleinwahl}]</div>`
+          : ''
+      }
+      ${event.anmeldung? 
+        `<div>Anmeldung unter: <a href="${event.anmeldung}" title="${event.anmeldung}" target="_blank">Anmelde-Link</a></div>`
+          : ''
+      }
+      ${event.mehr_infos? 
+        `<div>Weitere Informationen: <a href="${event.mehr_infos}" title="${event.mehr_infos}" target="_blank">Link</a></div>`
           : ''
       }
     </div>

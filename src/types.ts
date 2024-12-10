@@ -10,8 +10,8 @@ export interface Event {
   meetingid: string;
   kenncode: string;
   schnelleinwahl: string;
-  learnMoreUrl: string;
-  registerUrl: string;
+  anmeldung: string;
+  mehr_infos: string;
 }
 
 export interface NewsletterData {

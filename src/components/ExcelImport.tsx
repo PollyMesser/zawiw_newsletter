@@ -52,8 +52,8 @@ export default function ExcelImport({ onImport }: Props) {
           meetingid: row.meetingid || '',
           kenncode: row.kenncode || '',
           schnelleinwahl: row.schnelleinwahl || '',
-          learnMoreUrl: '',
-          registerUrl: '',
+          anmeldung: row.anmeldung || '',
+          mehr_infos: row.mehr_infos || '',
         };
       });
 

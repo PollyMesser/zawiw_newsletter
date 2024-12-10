@@ -22,6 +22,8 @@ export default function NewsletterForm({ data, onChange }: Props) {
       meetingid: '',
       kenncode: '',
       schnelleinwahl: '',
+      anmeldung: '',
+      mehr_infos: ''
     };
     onChange({ ...data, events: [...data.events, newEvent] });
   };
@@ -373,6 +375,22 @@ export default function NewsletterForm({ data, onChange }: Props) {
                 className="px-3 py-2 border rounded-md col-span-2"
                 rows={3}
                 maxLength={400}
+              />
+              <input
+                placeholder="Anmeldelink"
+                value={event.anmeldung}
+                onChange={(e) =>
+                  updateEvent(index, { anmeldung: e.target.value })
+                }
+                className="px-3 py-2 border rounded-md"
+              />
+              <input
+                placeholder="Weiter Informationen"
+                value={event.mehr_infos}
+                onChange={(e) =>
+                  updateEvent(index, { mehr_infos: e.target.value })
+                }
+                className="px-3 py-2 border rounded-md"
               />
             </div>
           </div>
