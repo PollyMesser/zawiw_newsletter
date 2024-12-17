@@ -126,8 +126,11 @@ Error generating stack: `+i.message+`
   .header, .footer {
     text-align: center;
     padding: 20px;
-    background-color: #c3c0b4;
-    color: #272725;
+    background-color: #236fa9;
+    color: #f4f4f4;
+  }
+  .header h1 {
+    font-size: 1.5em;
   }
   .content {
     padding: 20px;
@@ -140,11 +143,11 @@ Error generating stack: `+i.message+`
     justify-content: center;
   }
   .event-card {
-    border: 1px solid #c3c0b4;
+    border: 1px solid #b9c8d4;
     border-radius: 8px;
     padding: 16px;
     margin: 20px 0;
-    background-color: #efebdc;
+    background-color: #b9c8d4;
     max-width: 600px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     width: 100%;
