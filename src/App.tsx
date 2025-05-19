@@ -2,39 +2,61 @@ import React, { useState } from 'react';
 import { NewsletterData } from './types';
 import NewsletterForm from './components/NewsletterForm';
 import NewsletterPreview from './components/NewsletterPreview';
+import {
+  Panel,
+  PanelGroup,
+  PanelResizeHandle,
+} from 'react-resizable-panels';
+
 
 const initialData: NewsletterData = {
   title: 'ZAWiW Newsletter', // Added default title
   date: new Date().toISOString().split('T')[0],
   greeting:
-    'Liebe Freundinnen und Freunde des ZAWiW, \nliebe Mitglieder und Teilnehmende beim studium generale und den ViLE-Webinaren,',
+    'Guten Tag,',
   introduction:
     'Einleitungstext mit allgemeinen Hinweisen (ggf. Bezug aktuelles) und Highlights der unten stehenden Veranstaltungen',
   events: [],
   closingMessage:
-    'Wir freuen uns mit Ihnen auf viele spannende Veranstaltungen! \n\nHerzlichst',
+    'Wir freuen uns auf Ihre Teilnahme an den kommenden Veranstaltungen!',
   senderName: '',
 };
 
 function App() {
   const [data, setData] = useState<NewsletterData>(initialData);
-
+  const [openEventIndex, setOpenEventIndex] = useState<number | null>(null);
+  console.log("App renders", data);
   return (
-    <div className="min-h-screen bg-gray-100 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="h-screen bg-gray-100 overflow-hidden">
+      <div className="max-w-7xl mx-auto h-full flex flex-col">
         <h1 className="text-3xl font-bold text-center mb-8">
-          Newsletter Generator
+          ZAWiW Newsletter Generator
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
-            <NewsletterForm data={data} onChange={setData} />
-          </div>
+        <PanelGroup direction="horizontal" className="flex-grow overflow-hidden">
+          <Panel defaultSize={50} minSize={30}>
+            <div className="h-full overflow-auto pr-2">
+              <NewsletterForm
+                data={data}
+                onChange={setData}
+                openEventIndex={openEventIndex}
+                setOpenEventIndex={setOpenEventIndex}
+              />
+            </div>
+          </Panel>
 
-          <div className="space-y-6">
-            <NewsletterPreview data={data} />
-          </div>
-        </div>
+          <PanelResizeHandle className="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize" />
+
+          <Panel defaultSize={50} minSize={30}>
+            <div className="h-full overflow-auto pl-2">
+              <div className="sticky top-4">
+                <NewsletterPreview data={data} focusIndex={openEventIndex} />
+              </div>
+            </div>
+          </Panel>
+        </PanelGroup>
+
+
       </div>
     </div>
   );

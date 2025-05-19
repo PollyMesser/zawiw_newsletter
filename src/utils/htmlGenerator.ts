@@ -1,8 +1,9 @@
-import { NewsletterData } from '../types';
+import { NewsletterData, Event } from '../types';
 import { formatDate, formatDateWithWeekday, formatTime } from './dateUtils';
 import { formatText } from './textUtils';
 
-const generateStyles = () => `
+
+export const generateStyles = () => `
   body {
     font-family: Verdana, sans-serif;
     margin: 0;
@@ -88,62 +89,84 @@ const generateStyles = () => `
   }
 `;
 
-const generateEventHtml = (event: Event) => `
+export const generateEventHtml = (event: Event) => `
   <div class="event-wrapper">
     <div class="event-card">
-      <p>[${event.category}] ${formatDateWithWeekday(event.date)} um ${formatTime(event.time)} Uhr ${formatText(event.location)}</p>
+    <p>${event.category?
+      `[${formatCategory(event.category)}]`:''} 
+      ${formatDateWithWeekday(event.date)} 
+      ${event.time? `um ${formatTime(event.time)} Uhr`:''} ${formatText(event.location)}</p>
       <div class="event-title"><strong>
         ${formatText(event.title)}</strong>${event.referent ? ` mit ${formatText(event.referent)}` : ''}
       </div>
       <p>${formatText(event.description)}</p>
-      ${event.zoom? 
-        `<div>Zugangsdaten: <a href="${event.zoom}" title="${event.zoom}" target="_blank">Zoom-Link</a></div>
-        <div>[Meeting-ID: ${event.meetingid} | Kenncode: ${event.kenncode} | Schnelleinwahl mobil: ${event.schnelleinwahl}]</div>`
-          : ''
-      }
+      ${event.zoom ? 
+    (() => {
+        const details = [
+          event.meetingid ? `Meeting-ID: ${event.meetingid}` : '',
+          event.kenncode ? `Kenncode: ${event.kenncode}` : '',
+          event.schnelleinwahl ? `Schnelleinwahl mobil: ${event.schnelleinwahl}` : ''
+        ].filter(Boolean).join(' | ');
+        
+        return `
+          <div>Zugangsdaten: <a href="${event.zoom}" title="${event.zoom}" target="_blank">${event.zoom}</a></div>
+          ${details ? `<div>[${details}]</div>` : ''}
+        `;
+      })()
+    : ''}
       ${event.anmeldung? 
-        `<div>Anmeldung unter: <a href="${event.anmeldung}" title="${event.anmeldung}" target="_blank">Anmelde-Link</a></div>`
+        `<div>Anmeldung unter: <a href="${event.anmeldung}" title="${event.anmeldung}" target="_blank">${event.anmeldung}</a></div>`
           : ''
       }
       ${event.mehr_infos? 
-        `<div>Weitere Informationen: <a href="${event.mehr_infos}" title="${event.mehr_infos}" target="_blank">Link</a></div>`
+        `<div>Weitere Informationen: <a href="${event.mehr_infos}" title="${event.mehr_infos}" target="_blank">${event.mehr_infos}</a></div>`
           : ''
       }
     </div>
   </div>
 `;
 
+const formatCategory = (category: string): string =>
+  category?.startsWith('custom:') ? category.replace('custom:', '') : category;
+
+export const generateHeaderHtml = (data: NewsletterData): string => `
+  <div class="header">
+    <h1>${formatText(data.title)} ${formatDate(data.date)}</h1>
+  </div>
+  <div class="content">
+    <p class="hello">${formatText(data.greeting)}</p><br>
+    <p class="hello">${formatText(data.introduction)}</p>
+  </div>
+`;
+
+export const generateFooterHtml = (data: NewsletterData): string => `
+  <div class="footer">
+    <p>${formatText(data.closingMessage)}</p>
+    <p>${formatText(data.senderName)}</p>
+  </div>
+`;
+
 export const generateNewsletterHtml = (data: NewsletterData): string => {
   const template = `
-    <!DOCTYPE html>
-    <html lang="de">
-    <head>
-      <meta charset="UTF-8">
-      <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>${formatText(data.title)} ${formatDate(data.date)}</title>
-      <style>${generateStyles()}</style>
-    </head>
-    <body>
-      <div class="container">
-        <div class="header">
-          <h1>${formatText(data.title)} ${formatDate(data.date)}</h1>
-        </div>
-
-        <div class="content">
-          <p class="hello">${formatText(data.greeting)}</p><br>
-          <p class="hello">${formatText(data.introduction)}</p>
-
-          ${data.events.map(generateEventHtml).join('')}
-        </div>
-
-        <div class="footer">
-          <p>${formatText(data.closingMessage)}</p>
-          <p>${formatText(data.senderName)}</p>
-        </div>
+  <!DOCTYPE html>
+  <html lang="de">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${formatText(data.title)} ${formatDate(data.date)}</title>
+    <style>${generateStyles()}</style>
+  </head>
+  <body>
+    <div class="container">
+      ${generateHeaderHtml(data)}
+      <div class="content">
+        ${data.events.map(generateEventHtml).join('')}
       </div>
-    </body>
-    </html>
-  `;
+      ${generateFooterHtml(data)}
+    </div>
+  </body>
+  </html>
+`;
 
   return template;
 };

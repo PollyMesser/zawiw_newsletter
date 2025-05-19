@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { CalendarDays, Mail, User, Plus } from 'lucide-react';
 import { NewsletterData, Event } from '../types';
 import ExcelImport from './ExcelImport';
@@ -6,9 +6,11 @@ import ExcelImport from './ExcelImport';
 interface Props {
   data: NewsletterData;
   onChange: (data: NewsletterData) => void;
+  openEventIndex: number | null;
+  setOpenEventIndex: (index: number | null) => void;
 }
 
-export default function NewsletterForm({ data, onChange }: Props) {
+export default function NewsletterForm({ data, onChange, setOpenEventIndex, openEventIndex }: Props) {
   const addEvent = () => {
     const newEvent: Event = {
       category: '',
@@ -26,6 +28,8 @@ export default function NewsletterForm({ data, onChange }: Props) {
       mehr_infos: ''
     };
     onChange({ ...data, events: [...data.events, newEvent] });
+    setOpenEventIndex(data.events.length); // letzter Index wird geöffnet
+    setShowNewsletterDetails(false);
   };
 
   const updateEvent = (index: number, updatedEvent: Partial<Event>) => {
@@ -39,6 +43,75 @@ export default function NewsletterForm({ data, onChange }: Props) {
     onChange({ ...data, events: newEvents });
   };
 
+  const moveEventUp = (index) => {
+    if (index === 0) return;
+    const newEvents = [...data.events];
+    [newEvents[index - 1], newEvents[index]] = [newEvents[index], newEvents[index - 1]];
+    onChange({ ...data, events: newEvents });
+  };
+  
+  const moveEventDown = (index) => {
+    if (index === data.events.length - 1) return;
+    const newEvents = [...data.events];
+    [newEvents[index], newEvents[index + 1]] = [newEvents[index + 1], newEvents[index]];
+    onChange({ ...data, events: newEvents });
+  };
+
+  useEffect(() => {
+  if (
+    openEventIndex !== null &&
+    eventRefs.current[openEventIndex] &&
+    typeof window !== 'undefined'
+  ) {
+    eventRefs.current[openEventIndex]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    });
+  }
+}, [openEventIndex]);
+
+// ⬇️ NEU: zweiter Effekt für Klicks außerhalb des Kategorien-Dropdowns
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    const clickedInsideAnyDropdown = categoryDropdownRefs.current.some(
+      (ref) => ref && ref.contains(event.target as Node)
+    );
+
+    if (!clickedInsideAnyDropdown) {
+      setOpenCategoryIndex(null);
+    }
+  };
+
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => {
+    document.removeEventListener('mousedown', handleClickOutside);
+  };
+}, []);
+
+
+
+
+  
+  const eventRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [openCategoryIndex, setOpenCategoryIndex] = useState<number | null>(null);
+  const [showNewsletterDetails, setShowNewsletterDetails] = useState(true);
+  const categoryDropdownRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  categoryDropdownRefs.current = [];
+  const categories = [
+                      { label: 'ZAWiW', value: 'ZAWiW' },
+                      { label: 'studium generale', value: 'studium generale' },
+                      { label: 'ViLE-Webinare', value: 'ViLE-Webinare' },
+                      { label: 'Forschendes Lernen', value: 'Forschendes Lernen' },
+                      { label: 'Bürgerwissenschaften', value: 'Bürgerwissenschaften' },
+                      { label: 'Andere Abteilungen Uni', value: 'Andere Abteilungen Uni' },
+                      { label: 'Uni allgemein', value: 'Uni allgemein' },
+                      { label: 'UUG', value: 'UUG' },
+                      { label: 'Externe Veranstaltung', value: 'Externe Veranstaltung' },
+                      { label: 'studien', value: 'studien' },
+                      { label: 'muz', value: 'muz' },
+                    ];
+
   const handleExcelImport = (importedEvents: Event[]) => {
     onChange({ ...data, events: [...data.events, ...importedEvents] });
   };
@@ -46,61 +119,69 @@ export default function NewsletterForm({ data, onChange }: Props) {
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 space-y-6">
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setShowNewsletterDetails(!showNewsletterDetails)}
+          className="text-left w-full text-xl font-semibold flex items-center gap-2 hover:underline"
+        >
           <Mail className="w-5 h-5" />
-          Newsletter Details
-        </h2>
+          Veranstaltungsdetails bearbeiten
+        </button>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Newsletter Titel
-          </label>
-          <input
-            value={data.title}
-            onChange={(e) => onChange({ ...data, title: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md"
-            placeholder="z.B. ZAWiW Newsletter"
-          />
-        </div>
+        {showNewsletterDetails && (
+          <>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Newsletter Titel
+              </label>
+              <input
+                value={data.title}
+                onChange={(e) => onChange({ ...data, title: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="z.B. ZAWiW Newsletter"
+              />
+            </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Newsletter Datum
-          </label>
-          <input
-            type="date"
-            value={data.date}
-            onChange={(e) => onChange({ ...data, date: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md"
-          />
-        </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Newsletter Datum
+              </label>
+              <input
+                type="date"
+                value={data.date}
+                onChange={(e) => onChange({ ...data, date: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md"
+              />
+            </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Begrüßung
-          </label>
-          <textarea
-            value={data.greeting}
-            onChange={(e) => onChange({ ...data, greeting: e.target.value })}
-            className="w-full px-3 py-2 border rounded-md"
-            rows={3}
-          />
-        </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Begrüßung
+              </label>
+              <textarea
+                value={data.greeting}
+                onChange={(e) => onChange({ ...data, greeting: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md"
+                rows={3}
+              />
+            </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Einführungstext
-          </label>
-          <textarea
-            value={data.introduction}
-            onChange={(e) =>
-              onChange({ ...data, introduction: e.target.value })
-            }
-            className="w-full px-3 py-2 border rounded-md"
-            rows={4}
-          />
-        </div>
-      </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Einführungstext
+              </label>
+              <textarea
+                value={data.introduction}
+                onChange={(e) =>
+                  onChange({ ...data, introduction: e.target.value })
+                }
+                className="w-full px-3 py-2 border rounded-md"
+                rows={4}
+              />
+            </div>
+          </>
+        )} </div>
+
 
       <div className="space-y-4">
         <div className="flex justify-between items-center">
@@ -108,197 +189,116 @@ export default function NewsletterForm({ data, onChange }: Props) {
             <CalendarDays className="w-5 h-5" />
             Veranstaltungen
           </h2>
-          <div className="flex gap-2">
-            <ExcelImport onImport={handleExcelImport} />
-            <button
-              onClick={addEvent}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Event
-            </button>
-          </div>
+          <ExcelImport onImport={handleExcelImport} />
         </div>
-
         {data.events.map((event, index) => (
-          <div key={index} className="border rounded-lg p-4 space-y-3">
+          <div key={index} 
+          ref={(el) => (eventRefs.current[index] = el)}
+          className="border rounded-lg p-4 space-y-3">
             <div className="flex justify-between items-center">
-              <h3 className="font-medium">Event {index + 1}</h3>
-              <button
-                onClick={() => removeEvent(index)}
-                className="text-red-600 hover:text-red-700"
+              <h3
+                className="font-medium cursor-pointer"
+                onClick={() =>
+                  setOpenEventIndex(openEventIndex === index ? null : index)
+                }
               >
-                Remove
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="px-3 py-2 border rounded-md">
-                <div>
-                  <input
-                    type="radio"
-                    id={`zawiw-${index}`}
-                    name={`category-${index}`}
-                    value="ZAWiW"
-                    checked={event.category === 'ZAWiW'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`zawiw-${index}`}>ZAWiW</label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id={`studiumgenerale-${index}`}
-                    name={`category-${index}`}
-                    value="studium generale"
-                    checked={event.category === 'studium generale'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`studiumgenerale-${index}`}>
-                    studium generale
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id={`vile-${index}`}
-                    name={`category-${index}`}
-                    value="ViLE-Webinare"
-                    checked={event.category === 'ViLE-Webinare'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`vile-${index}`}>ViLE-webinare</label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id={`FL-${index}`}
-                    name={`category-${index}`}
-                    value="Forschendes Lernen"
-                    checked={event.category === 'Forschendes Lernen'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`FL-${index}`}>Forschendes Lernen</label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id={`bürgerwissenschaften-${index}`}
-                    name={`category-${index}`}
-                    value="Bürgerwissenschaften"
-                    checked={event.category === 'Bürgerwissenschaften'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`bürgerwissenschaften-${index}`}>
-                    Bürgerwissenschaften
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id={`andere-${index}`}
-                    name={`category-${index}`}
-                    value="Andere Abteilungen Uni"
-                    checked={event.category === 'Andere Abteilungen Uni'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`andere-${index}`}>
-                    Andere Abteilungen Uni
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id={`allgemein-${index}`}
-                    name={`category-${index}`}
-                    value="Uni allgemein"
-                    checked={event.category === 'Uni allgemein'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`allgemein-${index}`}>Uni allgemein</label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id={`uug-${index}`}
-                    name={`category-${index}`}
-                    value="UUG"
-                    checked={event.category === 'UUG'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`uug-${index}`}>UUG</label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id={`extern-${index}`}
-                    name={`category-${index}`}
-                    value="Externe Veranstaltung"
-                    checked={event.category === 'Externe Veranstaltung'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`extern-${index}`}>
-                    Externe Veranstaltung
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id={`studien-${index}`}
-                    name={`category-${index}`}
-                    value="studien"
-                    checked={event.category === 'studien'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`studien-${index}`}>
-                    Studien / Forschungshinweise
-                  </label>
-                </div>
-                <div>
-                  <input
-                    type="radio"
-                    id={`muz-${index}`}
-                    name={`category-${index}`}
-                    value="muz"
-                    checked={event.category === 'muz'}
-                    onChange={(e) =>
-                      updateEvent(index, { category: e.target.value })
-                    }
-                    className="mr-2"
-                  />
-                  <label htmlFor={`muz-${index}`}>Musikalisches Zentrum</label>
+                Event {index + 1}: {event.title || 'Kein Titel'}
+              </h3>
+              <div className="flex flex-col items-end space-y-1">
+                <button
+                  onClick={() => removeEvent(index)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  Remove
+                </button>
+                <div className="flex flex-col space-y-1">
+                  <button
+                    onClick={() => moveEventUp(index)}
+                    disabled={index === 0}
+                    className="text-gray-600 hover:text-gray-800 disabled:opacity-30"
+                    title="Nach oben verschieben"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    onClick={() => moveEventDown(index)}
+                    disabled={index === data.events.length - 1}
+                    className="text-gray-600 hover:text-gray-800 disabled:opacity-30"
+                    title="Nach unten verschieben"
+                  >
+                    ▼
+                  </button>
                 </div>
               </div>
+            </div>
+            
+            {openEventIndex === index && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOpenCategoryIndex(openCategoryIndex === index ? null : index)
+                    }
+                    className="w-full text-left px-3 py-2 border rounded-md bg-white hover:bg-gray-50"
+                  >
+                    {event.category
+                      ? event.category.startsWith('custom:')
+                        ? `Kategorie: ${event.category.replace('custom:', '')}`
+                        : `Kategorie: ${event.category}`
+                      : 'Kategorie wählen'}
+                  </button>
+
+                  {openCategoryIndex === index && (
+                    <div
+                      ref={(el) => (categoryDropdownRefs.current[index] = el)}
+                      className="absolute z-10 bg-white border mt-1 rounded-md shadow-lg w-full max-h-64 overflow-auto"
+                    >
+                      {categories.map(({ label, value }) => (
+                        <div
+                          key={value}
+                          onClick={() => {
+                            updateEvent(index, { category: value });
+                            setOpenCategoryIndex(null);
+                          }}
+                          className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                        >
+                          {label}
+                        </div>
+                      ))}
+
+                      {/* Manuelle Kategorie-Auswahl */}
+                      <div
+                        onClick={() => {
+                          updateEvent(index, { category: 'custom:' });
+                          // dropdown bleibt offen
+                        }}
+                        className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+                      >
+                        Andere Kategorie
+                      </div>
+
+                      {/* Eingabefeld nur bei custom: */}
+                      {event.category?.startsWith('custom:') && (
+                        <div className="border-t px-4 py-2 bg-gray-50">
+                          
+                          <input
+                            type="text"
+                            value={event.category.replace('custom:', '')}
+                            onChange={(e) =>
+                              updateEvent(index, {
+                                category: `custom:${e.target.value}`,
+                              })
+                            }
+                            placeholder="Kategorie eingeben"
+                            className="w-full border px-2 py-1 rounded mt-1"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              
 
               <input
                 placeholder="Titel der Veranstaltung"
@@ -373,8 +373,7 @@ export default function NewsletterForm({ data, onChange }: Props) {
                   updateEvent(index, { description: e.target.value })
                 }
                 className="px-3 py-2 border rounded-md col-span-2"
-                rows={3}
-                maxLength={400}
+                rows={5}
               />
               <input
                 placeholder="Anmeldelink"
@@ -385,7 +384,7 @@ export default function NewsletterForm({ data, onChange }: Props) {
                 className="px-3 py-2 border rounded-md"
               />
               <input
-                placeholder="Weiter Informationen"
+                placeholder="Weitere Informationen"
                 value={event.mehr_infos}
                 onChange={(e) =>
                   updateEvent(index, { mehr_infos: e.target.value })
@@ -393,8 +392,36 @@ export default function NewsletterForm({ data, onChange }: Props) {
                 className="px-3 py-2 border rounded-md"
               />
             </div>
+            )}
+            {openEventIndex === index && (
+              <div className="pt-2">
+                <button
+                  onClick={addEvent}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  Veranstaltung hinzufügen
+                </button>
+              </div>
+              
+            )}
+
           </div>
-        ))}
+        ))} 
+
+        {data.events.length === 0 && (
+          <div className="pt-4">
+            <button
+              onClick={addEvent}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Veranstaltung hinzufügen
+            </button>
+          </div>
+        )}
+
+
       </div>
 
       <div className="space-y-4">
